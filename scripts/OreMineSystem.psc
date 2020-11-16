@@ -1,59 +1,60 @@
-Scriptname NewMine extends ObjectReference  
+Scriptname OreMineSystem extends ObjectReference  
+{ custom ore system based on default skyrim MineOreScript }
 
 sound property DrScOreOpen auto
-{sound played when Ore is acquired}
+{ sound played when Ore is acquired }
 
 formlist property mineOreToolsList auto
-{Optional: Player must have at least one item from this formlist to interact}
+{ Optional: Player must have at least one item from this formlist to interact }
 
 Message Property FailureMessage Auto  
-{Message to say why you can't use this without RequiredWeapon}
+{ Message to say why you can't use this without RequiredWeapon }
 
 Message Property DepletedMessage Auto  
-{Message to say that this vein is depleted}
+{ Message to say that this vein is depleted }
 
 MiscObject Property Ore Auto  
-{what you get from this Ore Vein}
+{ what you get from this Ore Vein }
 
 LeveledItem property lItemGems10 auto
-{Optional: Gems that may be mined along with ore}
+{ Optional: Gems that may be mined along with ore }
 
 int Property ResourceCount = 1 Auto
-{how many resources you get per drop}
+{ how many resources you get per drop }
 
 int Property FullnessOreCount = 1000 Auto 
-{fullness MOD}
+{ strength of ore }
 
 int Property OreHealCount = 1 Auto 
-{fullness MOD}
+{ amount of regeneration for each sec }
 
 int Property ProcessMinus = 6 Auto 
-{fullness MOD}
+{ reduce fullness of ore each second when player is mining }
 
 int property StrikesNeed = 12 Auto
-{how many times this is struck before giving a resource} 
+{ how many times this is struck before giving a resource } 
 
 int property StrikesNeedTwo = 30 Auto
-{how many times this is struck before giving a resource} 
+{ how many times this is struck before giving a resource } 
 
 int property StrikesNeedThree = 40 Auto
-{how many times this is struck before giving a resource} 
+{ how many times this is struck before giving a resource } 
 
 int property StrikesCurrent = 0 Auto hidden
-{Current number of strikes}
+{ Current number of strikes }
 
 bool property ProcessStrikes = false Auto hidden
-{Current number of attack strikes MOD}
+{ Current number of attack strikes MOD }
 
 int Property TimeSec = 15 Auto 
 
 Int Property TimeSecCurrent = 0 Auto 
 
 mineOreFurnitureScript property myFurniture auto hidden
-{the furniture for this piece of ore, set in script}
+{ the furniture for this piece of ore, set in script }
 
 objectReference property objSelf auto hidden
-{objectReference to self}
+{ objectReference to self }
 
 AchievementsScript property AchievementsQuest auto
 
@@ -69,8 +70,12 @@ Actor Property ActorSelf Auto
 ; EndEvent
 
 Event OnUpdate()
+
+	string StVal = "Stamina"
+	string Res = "Reset"
+	string bAnimDr = "bAnimationDriven"
+
 	if ActorSelf
-	
 		if FullnessOreCount < 1000	
 			FullnessOreCount += OreHealCount
 			RegisterForSingleUpdate(1.0)
@@ -80,14 +85,14 @@ Event OnUpdate()
 			ResetObj()
 		endif
 		
-		if ActorSelf.GetActorValue("Stamina") > 0 && ProcessStrikes == true
-			ActorSelf.DamageActorValue("Stamina", 2.0)
+		if ActorSelf.GetActorValue(StVal) > 0 && ProcessStrikes
+			ActorSelf.DamageActorValue(StVal, 2.0)
 			TimeSecCurrent += 1
 			RegisterForSingleUpdate(1.0)
 		
-		elseif ActorSelf.GetActorValue("Stamina") <= 0 && ProcessStrikes == true
+		elseif ActorSelf.GetActorValue(StVal) <= 0 && ProcessStrikes
 			myFurniture.playerIsLeavingFurniture = True
-			myFurniture.goToState("reseting")
+			myFurniture.goToState(Res)
 			
 			TimeSecCurrent = 0
 			ProcessStrikes = false
@@ -96,9 +101,9 @@ Event OnUpdate()
 
 		
 
-		if TimeSecCurrent == TimeSec && ActorSelf.getAnimationVariableBool("bAnimationDriven") == true
+		if TimeSecCurrent == TimeSec && ActorSelf.getAnimationVariableBool(bAnimDr) == true
 			myFurniture.playerIsLeavingFurniture = True
-			myFurniture.goToState("reseting")
+			myFurniture.goToState(Res)
 			
 			TimeSecCurrent = 0
 			ProcessStrikes = false
@@ -107,18 +112,17 @@ Event OnUpdate()
 			proccessStrikes(ActorSelf)
 		endif
 
-		if ActorSelf.getAnimationVariableBool("bAnimationDriven") == false
-			ActorSelf.ModActorValue("StaminaRate", 100)
-			ProcessStrikes == false
+		if !ActorSelf.getAnimationVariableBool(bAnimDr)
+			ActorSelf.ModActorValue(StVal + "Rate", 100)
+			ProcessStrikes = false
 			UnregisterForUpdate()
 		endif
-
 	endif
-	
 	
 endEvent
 
-event onCellAttach()
+Event onCellAttach()
+
 	if ActorSelf	
 
 		blockActivation()
@@ -131,9 +135,11 @@ event onCellAttach()
 
 		endif
 	endif
+
 endEvent
 
 event onActivate(objectReference akActivator)
+
 	ActorSelf = akActivator As Actor
 
 	;Actor is attempting to mine
@@ -141,7 +147,7 @@ event onActivate(objectReference akActivator)
 		;if this is not depleted and the player has the right item 
 		If FullnessOreCount == 0
 			DepletedMessage.Show()
-		elseif playerHasTools() == false
+		elseif !playerHasTools()
 			FailureMessage.Show()
 		;enter the furniture
 		else
@@ -153,35 +159,40 @@ event onActivate(objectReference akActivator)
 				myFurniture.lastActivateRef = objSelf
 				getLinkedRef().activate(akActivator)
 				AchievementsQuest.incHardworker(2)
-			Else
+			else
 			endif
 		endif
 	endif
+
 endEvent
 
 Function ResetObj()
+
 	self.Reset()
 	self.clearDestruction()
 	self.setDestroyed(False)
+
 endFunction
 
 ;===================================================================
 ;;FUNCTION BLOCK
 ;===================================================================
-bool function playerHasTools()
+Bool Function playerHasTools()
+
 	if ActorSelf
 		if ActorSelf.GetItemCount(mineOreToolsList) > 0
-	; 		debug.Trace(self + ": playerHasTools is returning true")
+    	    ; debug.Trace(self + ": playerHasTools is returning true")
 			return true
 		Else
-	; 		debug.Trace(self + ": playerHasTools is returning false")
+	        ; debug.Trace(self + ": playerHasTools is returning false")
 			return false
 		endIf
-
 	endif
+
 endFunction
 
 function proccessStrikes(objectReference akActivator)
+
 	if (FullnessOreCount <= 800 && FullnessOreCount > 200) 
 		StrikesNeed = StrikesNeedTwo
 	EndIf
@@ -198,8 +209,8 @@ function proccessStrikes(objectReference akActivator)
 endFunction
 
 function giveOre(objectReference akActivator)
+
 	if ActorSelf
-		
 		if FullnessOreCount > 0
 			if FullnessOreCount == 0
 				self.damageObject(50)
@@ -234,9 +245,11 @@ function giveOre(objectReference akActivator)
 
 EndFunction
 
-function depleteOreDueToFailure()
+Function depleteOreDueToFailure()
+
 	self.damageObject(50)
-	;THIS WASN'T WORKING RIGHT
 	self.setDestroyed(true)
+	
 	FullnessOreCount = 0
+
 endFunction
