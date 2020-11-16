@@ -1,8 +1,8 @@
-Scriptname NewMineChair extends ObjectReference  
+Scriptname SkyMp_NewMineChair extends ObjectReference  
 
 float Property StaminaChairRegenPerSec = 0.6 Auto
 
-ZoneOfRelaxTrigScript property RelaxTrig auto
+SkyMp_ZoneOfRelaxTrig property RelaxTrig auto
 
 bool Property isSeat = false Auto
 

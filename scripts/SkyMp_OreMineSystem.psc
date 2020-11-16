@@ -1,4 +1,4 @@
-Scriptname OreMineSystem extends ObjectReference  
+Scriptname SkyMp_OreMineSystem extends ObjectReference  
 { custom ore system based on default skyrim MineOreScript }
 
 sound property DrScOreOpen auto
@@ -70,12 +70,8 @@ Actor Property ActorSelf Auto
 ; EndEvent
 
 Event OnUpdate()
-
-	string StVal = "Stamina"
-	string Res = "Reset"
-	string bAnimDr = "bAnimationDriven"
-
 	if ActorSelf
+	
 		if FullnessOreCount < 1000	
 			FullnessOreCount += OreHealCount
 			RegisterForSingleUpdate(1.0)
@@ -85,14 +81,14 @@ Event OnUpdate()
 			ResetObj()
 		endif
 		
-		if ActorSelf.GetActorValue(StVal) > 0 && ProcessStrikes
-			ActorSelf.DamageActorValue(StVal, 2.0)
+		if ActorSelf.GetActorValue("Stamina") > 0 && ProcessStrikes == true
+			ActorSelf.DamageActorValue("Stamina", 2.0)
 			TimeSecCurrent += 1
 			RegisterForSingleUpdate(1.0)
 		
-		elseif ActorSelf.GetActorValue(StVal) <= 0 && ProcessStrikes
+		elseif ActorSelf.GetActorValue("Stamina") <= 0 && ProcessStrikes == true
 			myFurniture.playerIsLeavingFurniture = True
-			myFurniture.goToState(Res)
+			myFurniture.goToState("reseting")
 			
 			TimeSecCurrent = 0
 			ProcessStrikes = false
@@ -101,9 +97,9 @@ Event OnUpdate()
 
 		
 
-		if TimeSecCurrent == TimeSec && ActorSelf.getAnimationVariableBool(bAnimDr) == true
+		if TimeSecCurrent == TimeSec && ActorSelf.getAnimationVariableBool("bAnimationDriven") == true
 			myFurniture.playerIsLeavingFurniture = True
-			myFurniture.goToState(Res)
+			myFurniture.goToState("reseting")
 			
 			TimeSecCurrent = 0
 			ProcessStrikes = false
@@ -112,17 +108,18 @@ Event OnUpdate()
 			proccessStrikes(ActorSelf)
 		endif
 
-		if !ActorSelf.getAnimationVariableBool(bAnimDr)
-			ActorSelf.ModActorValue(StVal + "Rate", 100)
-			ProcessStrikes = false
+		if ActorSelf.getAnimationVariableBool("bAnimationDriven") == false
+			ActorSelf.ModActorValue("StaminaRate", 100)
+			ProcessStrikes == false
 			UnregisterForUpdate()
 		endif
+
 	endif
+	
 	
 endEvent
 
-Event onCellAttach()
-
+event onCellAttach()
 	if ActorSelf	
 
 		blockActivation()
@@ -135,11 +132,9 @@ Event onCellAttach()
 
 		endif
 	endif
-
 endEvent
 
 event onActivate(objectReference akActivator)
-
 	ActorSelf = akActivator As Actor
 
 	;Actor is attempting to mine
@@ -147,7 +142,7 @@ event onActivate(objectReference akActivator)
 		;if this is not depleted and the player has the right item 
 		If FullnessOreCount == 0
 			DepletedMessage.Show()
-		elseif !playerHasTools()
+		elseif playerHasTools() == false
 			FailureMessage.Show()
 		;enter the furniture
 		else
@@ -159,40 +154,35 @@ event onActivate(objectReference akActivator)
 				myFurniture.lastActivateRef = objSelf
 				getLinkedRef().activate(akActivator)
 				AchievementsQuest.incHardworker(2)
-			else
+			Else
 			endif
 		endif
 	endif
-
 endEvent
 
 Function ResetObj()
-
 	self.Reset()
 	self.clearDestruction()
 	self.setDestroyed(False)
-
 endFunction
 
 ;===================================================================
 ;;FUNCTION BLOCK
 ;===================================================================
-Bool Function playerHasTools()
-
+bool function playerHasTools()
 	if ActorSelf
 		if ActorSelf.GetItemCount(mineOreToolsList) > 0
-    	    ; debug.Trace(self + ": playerHasTools is returning true")
+	; 		debug.Trace(self + ": playerHasTools is returning true")
 			return true
 		Else
-	        ; debug.Trace(self + ": playerHasTools is returning false")
+	; 		debug.Trace(self + ": playerHasTools is returning false")
 			return false
 		endIf
-	endif
 
+	endif
 endFunction
 
 function proccessStrikes(objectReference akActivator)
-
 	if (FullnessOreCount <= 800 && FullnessOreCount > 200) 
 		StrikesNeed = StrikesNeedTwo
 	EndIf
@@ -209,8 +199,8 @@ function proccessStrikes(objectReference akActivator)
 endFunction
 
 function giveOre(objectReference akActivator)
-
 	if ActorSelf
+		
 		if FullnessOreCount > 0
 			if FullnessOreCount == 0
 				self.damageObject(50)
@@ -245,11 +235,9 @@ function giveOre(objectReference akActivator)
 
 EndFunction
 
-Function depleteOreDueToFailure()
-
+function depleteOreDueToFailure()
 	self.damageObject(50)
+	;THIS WASN'T WORKING RIGHT
 	self.setDestroyed(true)
-	
 	FullnessOreCount = 0
-
 endFunction

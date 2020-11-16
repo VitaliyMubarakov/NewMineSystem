@@ -1,4 +1,4 @@
-﻿Scriptname MineJob extends ObjectReference  
+﻿Scriptname SkyMp_MineJob extends ObjectReference  
 
 ;-- Нужные для работы вещи --------------------------------------
 
@@ -26,6 +26,9 @@ ObjectReference property ContainerForOre auto
 ;-- триггер для работы --------------------------------------
 miscobject property FakeItemForWork auto
 
+;-- звук выхода из работы --------------------------------------
+sound property soundOfLeaveFromMineJob auto
+
 function PayForWork(ObjectReference ActorPay)
 
     Int i = 0
@@ -43,6 +46,8 @@ Function DeleteJob(objectReference akActionRef)
     int i = 0
 
     self.PayForWork(akActionRef)
+
+    soundOfLeaveFromMineJob.Play(akActionRef)
 
     While (i < needJobItems.GetSize()) 
         if (akActionRef.GetItemCount(needJobItems.GetAt(i)) >= 1)

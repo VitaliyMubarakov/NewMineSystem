@@ -1,6 +1,6 @@
-Scriptname MineContainer extends ObjectReference  
+Scriptname SkyMP_MineContainer extends ObjectReference  
 
-MineJobScript property MineJob auto
+SkyMp_MineJob property MineJob auto
 
 Event OnInit() 
     self.BlockActivation(true)

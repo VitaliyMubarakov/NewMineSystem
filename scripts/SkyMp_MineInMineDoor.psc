@@ -1,6 +1,6 @@
-Scriptname MineInMineDoor extends ObjectReference  
+Scriptname SkyMp_MineInMineDoor extends ObjectReference  
 
-MineJobScript property MineJob auto
+SkyMp_MineJob property MineJob auto
 
 ObjectReference property TeleportMarker auto
 
