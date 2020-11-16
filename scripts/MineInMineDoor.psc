@@ -21,5 +21,7 @@ auto state waitingForActor
         else
             Debug.MessageBox("�� �� ������ ���� ������! ��� ����� ���������� �� ������ � �����")
         endif
-	endEvent
+
+    endEvent
+    
 endState

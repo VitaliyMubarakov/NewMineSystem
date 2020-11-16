@@ -1,4 +1,4 @@
-﻿Scriptname MineJobScript extends ObjectReference  
+﻿Scriptname MineJob extends ObjectReference  
 
 ;-- Нужные для работы вещи --------------------------------------
 
@@ -27,15 +27,19 @@ ObjectReference property ContainerForOre auto
 miscobject property FakeItemForWork auto
 
 function PayForWork(ObjectReference ActorPay)
-	Int i = 0
+
+    Int i = 0
+    
 	while i < Products.GetSize() 
 		ActorPay.AddItem(Gold001 as form, ActorPay.GetItemCount(Products.GetAt(i)) * ProductPrices[i], false)
 		ActorPay.RemoveItem(Products.GetAt(i), ActorPay.GetItemCount(Products.GetAt(i)), false, ContainerForOre)
 		i += 1
-	endWhile
+    endWhile
+    
 endFunction
 
 Function DeleteJob(objectReference akActionRef)
+
     int i = 0
 
     self.PayForWork(akActionRef)
@@ -45,13 +49,15 @@ Function DeleteJob(objectReference akActionRef)
             akActionRef.RemoveItem(needJobItems.GetAt(i) as form, 1, false)
         endif
         i += 1
-    EndWhile
+    endWhile
     akActionRef.RemoveItem(FakeItemForWork as form, akActionRef.GetItemCount(FakeItemForWork as form), true, none)
     
     Debug.MessageBox("Вы завершили свой рабочий день")
+
 EndFunction
 
 Function SetJob(objectReference akActionRef)
+
     int i = 0
     
     While (i < needJobItems.GetSize())       
@@ -60,15 +66,18 @@ Function SetJob(objectReference akActionRef)
             akActionRef.AddItem(needJobItems.GetAt(i) as form, 1, false)
         endif
         i += 1
-    EndWhile
+    endWhile
     akActionRef.AddItem(FakeItemForWork as form, 1, true)
     Debug.MessageBox("Вы начали свой рабочий день")
+
 EndFunction
 
-event onActivate(objectReference akActionRef)
+Event onActivate(objectReference akActionRef)
+
     if akActionRef.GetItemCount(FakeItemForWork as form) == 0
         SetJob(akActionRef)
     else
         DeleteJob(akActionRef)
     endif
+
 endEvent
