@@ -1,32 +1,32 @@
-п»їScriptname SkyMp_MineJob extends ObjectReference  
+Scriptname SkyMp_MineJob extends ObjectReference  
 
-;-- РќСѓР¶РЅС‹Рµ РґР»СЏ СЂР°Р±РѕС‚С‹ РІРµС‰Рё --------------------------------------
+;-- Нужные для работы вещи --------------------------------------
 
 formlist property needJobItems auto
 
-;-- Р’РµС‰Рё РІС‹РґР°РІР°РµРјС‹Рµ РїСЂРё РІР·СЏС‚РёРё СЂР°Р±РѕС‚С‹ --------------------------------------
+;-- Вещи выдаваемые при взятии работы --------------------------------------
 
 ; weapon property weapPickaxe auto
 ; armor property mineCloth auto
 ; armor property mineBoots auto
 
-;-- РџРµСЂРµРјРµРЅРЅС‹Рµ СЂСѓРґ --------------------------------------
+;-- Переменные руд --------------------------------------
 
 formlist property Products auto
 
-;-- РџРµСЂРµРјРµРЅРЅР°СЏ Р·РѕР»РѕС‚Р° --------------------------------------
+;-- Переменная золота --------------------------------------
 miscobject property Gold001 auto
 
-;-- РњР°СЃСЃРёРІ С†РµРЅ РЅР° СЂСѓРґС‹ --------------------------------------
+;-- Массив цен на руды --------------------------------------
 Int[] property ProductPrices auto
 
-;-- РҐСЂР°РЅРёР»РёС‰Рµ СЂСѓРґС‹ С€Р°С…С‚С‹ --------------------------------------
+;-- Хранилище руды шахты --------------------------------------
 ObjectReference property ContainerForOre auto
 
-;-- С‚СЂРёРіРіРµСЂ РґР»СЏ СЂР°Р±РѕС‚С‹ --------------------------------------
+;-- триггер для работы --------------------------------------
 miscobject property FakeItemForWork auto
 
-;-- Р·РІСѓРє РІС‹С…РѕРґР° РёР· СЂР°Р±РѕС‚С‹ --------------------------------------
+;-- звук выхода из работы --------------------------------------
 sound property soundOfLeaveFromMineJob auto
 
 function PayForWork(ObjectReference ActorPay)
@@ -47,8 +47,6 @@ Function DeleteJob(objectReference akActionRef)
 
     self.PayForWork(akActionRef)
 
-    soundOfLeaveFromMineJob.Play(akActionRef)
-
     While (i < needJobItems.GetSize()) 
         if (akActionRef.GetItemCount(needJobItems.GetAt(i)) >= 1)
             akActionRef.RemoveItem(needJobItems.GetAt(i) as form, 1, false)
@@ -57,7 +55,7 @@ Function DeleteJob(objectReference akActionRef)
     endWhile
     akActionRef.RemoveItem(FakeItemForWork as form, akActionRef.GetItemCount(FakeItemForWork as form), true, none)
     
-    Debug.MessageBox("Р’С‹ Р·Р°РІРµСЂС€РёР»Рё СЃРІРѕР№ СЂР°Р±РѕС‡РёР№ РґРµРЅСЊ")
+    Debug.MessageBox("Вы завершили свой рабочий день")
 
 EndFunction
 
@@ -73,7 +71,7 @@ Function SetJob(objectReference akActionRef)
         i += 1
     endWhile
     akActionRef.AddItem(FakeItemForWork as form, 1, true)
-    Debug.MessageBox("Р’С‹ РЅР°С‡Р°Р»Рё СЃРІРѕР№ СЂР°Р±РѕС‡РёР№ РґРµРЅСЊ")
+    Debug.MessageBox("Вы начали свой рабочий день")
 
 EndFunction
 
@@ -83,6 +81,7 @@ Event onActivate(objectReference akActionRef)
         SetJob(akActionRef)
     else
         DeleteJob(akActionRef)
+        soundOfLeaveFromMineJob.Play(akActionRef)
     endif
 
 endEvent
