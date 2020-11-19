@@ -1,39 +1,52 @@
 Scriptname SkyMp_MineJob extends ObjectReference  
 
-;-- Нужные для работы вещи --------------------------------------
+;--     --------------------------------------
 
 formlist property needJobItems auto
 
-;-- Вещи выдаваемые при взятии работы --------------------------------------
+;--      --------------------------------------
 
 ; weapon property weapPickaxe auto
 ; armor property mineCloth auto
 ; armor property mineBoots auto
 
-;-- Переменные руд --------------------------------------
+;--   --------------------------------------
 
 formlist property Products auto
 
-;-- Переменная золота --------------------------------------
+;--   --------------------------------------
 miscobject property Gold001 auto
 
-;-- Массив цен на руды --------------------------------------
+;--     --------------------------------------
 Int[] property ProductPrices auto
 
-;-- Хранилище руды шахты --------------------------------------
+;--    --------------------------------------
 ObjectReference property ContainerForOre auto
 
-;-- триггер для работы --------------------------------------
+;--    --------------------------------------
 miscobject property FakeItemForWork auto
 
-;-- звук выхода из работы --------------------------------------
-sound property soundOfLeaveFromMineJob auto
+Faction property PlayerIsMiner auto
+
+;--     --------------------------------------
+sound property soundOfLeaveMineJob auto
+
+Actor ActorSelf
+
+; -- GetSet ----------------
+Faction Function GetPlayerIsMiner()
+    return PlayerIsMiner
+EndFunction 
+
+miscobject Function GetFakeItemForWork()
+    return FakeItemForWork
+EndFunction 
 
 function PayForWork(ObjectReference ActorPay)
 
     Int i = 0
     
-	while i < Products.GetSize() 
+	while (i < Products.GetSize())
 		ActorPay.AddItem(Gold001 as form, ActorPay.GetItemCount(Products.GetAt(i)) * ProductPrices[i], false)
 		ActorPay.RemoveItem(Products.GetAt(i), ActorPay.GetItemCount(Products.GetAt(i)), false, ContainerForOre)
 		i += 1
@@ -53,9 +66,11 @@ Function DeleteJob(objectReference akActionRef)
         endif
         i += 1
     endWhile
-    akActionRef.RemoveItem(FakeItemForWork as form, akActionRef.GetItemCount(FakeItemForWork as form), true, none)
+    ; akActionRef.RemoveItem(FakeItemForWork as form, akActionRef.GetItemCount(FakeItemForWork as form), true, none)
+
+    ActorSelf.RemoveFromFaction(PlayerIsMiner)
     
-    Debug.MessageBox("Вы завершили свой рабочий день")
+    Debug.MessageBox("Вы закончили свой рабочий день")
 
 EndFunction
 
@@ -70,18 +85,23 @@ Function SetJob(objectReference akActionRef)
         endif
         i += 1
     endWhile
-    akActionRef.AddItem(FakeItemForWork as form, 1, true)
+    ; akActionRef.AddItem(FakeItemForWork as form, 1, true)
+
+    ActorSelf.AddToFaction(PlayerIsMiner)
+
     Debug.MessageBox("Вы начали свой рабочий день")
 
 EndFunction
 
 Event onActivate(objectReference akActionRef)
 
-    if akActionRef.GetItemCount(FakeItemForWork as form) == 0
+    ActorSelf = akActionRef As Actor
+
+    if (ActorSelf.IsInFaction(PlayerIsMiner) == false)
         SetJob(akActionRef)
     else
         DeleteJob(akActionRef)
-        soundOfLeaveFromMineJob.Play(akActionRef)
+        soundOfLeaveMineJob.Play(akActionRef)
     endif
 
 endEvent

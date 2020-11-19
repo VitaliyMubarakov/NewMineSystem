@@ -1,14 +1,25 @@
-Scriptname SkyMp_ZoneOfRelaxTrig extends ObjectReference  
+Scriptname SkyMp_RestZone extends ObjectReference  
 
 float Property StaminaRegenPerSec = 0.16 Auto
 
-Actor Property ActorSelf Auto
+Actor ActorSelf
+
+; -- GetSet ----------------
+float Function GetStaminaRegenPerSec()
+    return StaminaRegenPerSec
+EndFunction
+
+Function SetStaminaRegenPerSec(float ValueStaminaRegenPerSec)
+    StaminaRegenPerSec = ValueStaminaRegenPerSec
+EndFunction
+
+; -- Events ---
 
 Event OnUpdate()
     
     string stVal = "Stamina" 
 
-    if ActorSelf && ActorSelf.GetActorValue(stVal) < ActorSelf.GetBaseActorValue(stVal)
+    if (ActorSelf && ActorSelf.GetActorValue(stVal) < ActorSelf.GetBaseActorValue(stVal))
         ActorSelf.RestoreActorValue(stVal, StaminaRegenPerSec)
         RegisterForSingleUpdate(1.0)
     endif

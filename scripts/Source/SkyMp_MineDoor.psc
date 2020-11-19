@@ -4,7 +4,7 @@ SkyMp_MineJob property MineJob auto
 
 ObjectReference property TeleportMarker auto
 
-Actor Property ActorSelf Auto
+Actor ActorSelf
 
 Event onActivate(objectReference akActionRef)
 

@@ -4,22 +4,22 @@ SkyMp_MineJob property MineJob auto
 
 ObjectReference property TeleportMarker auto
 
-Actor Property ActorSelf Auto
+Actor ActorSelf
 
 
 auto state waitingForActor
 
 	Event onTriggerEnter(ObjectReference akTriggerRef)
 
-		if akTriggerRef.GetItemCount(MineJob.FakeItemForWork as form) == 1
+        ActorSelf = akTriggerRef As Actor
+
+		if (ActorSelf.IsInFaction(MineJob.PlayerIsMiner) == true)
             akTriggerRef.MoveTo(TeleportMarker)
 
-            ActorSelf = akTriggerRef As Actor
-
             ActorSelf.ForceActorValue("StaminaRate", -100)
-            
+
         else
-            Debug.MessageBox("Вы не можете сюда пройти, вам необходимо устроиться на работу в шахте")
+            Debug.MessageBox("Вы не можете сюда пройти, устройтесь на работу шахтёром")
         endif
 
     endEvent
