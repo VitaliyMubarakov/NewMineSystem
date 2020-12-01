@@ -1,6 +1,6 @@
 Scriptname SkyMp_NewMineChair extends ObjectReference  
 
-float Property StaminaChairRegenPerSec = 0.6 Auto
+float Property FatigueChairRegenPerSec Auto
 
 SkyMp_RestZone property RestZone auto
 
@@ -13,22 +13,23 @@ float Property GetStaminaRegenPerSec Auto
 Event OnUpdate()   
 
     if (self.IsFurnitureMarkerInUse(0) == false)
-        UnregisterForUpdate()
-        ; RestZone.SetStaminaRegenPerSec(GetStaminaRegenPerSec - StaminaChairRegenPerSec)
-        RestZone.StaminaRegenPerSec -= StaminaChairRegenPerSec
+        ; RestZone.SetStaminaRegenPerSec(GetStaminaRegenPerSec - FatigueChairRegenPerSec)
+        RestZone.SetFatigueRegenPerSec(RestZone.GetFatigueRegenPerSec() - FatigueChairRegenPerSec)
+        Debug.MessageBox(RestZone.GetFatigueRegenPerSec())
         isSeat = !isSeat
+        UnregisterForUpdate()
     endif
 
 endEvent
 
 Event onActivate(objectReference akActionRef)
-    
     if (isSeat == false)
         isSeat = !isSeat
+        FatigueChairRegenPerSec = RestZone.GetFatigueRegenPerSec()/100 * 200
+        GetStaminaRegenPerSec = RestZone.GetFatigueRegenPerSec()
+        ; RestZone.SetStaminaRegenPerSec(GetStaminaRegenPerSec + FatigueChairRegenPerSec)
+        RestZone.SetFatigueRegenPerSec(RestZone.GetFatigueRegenPerSec() + FatigueChairRegenPerSec)
         RegisterForUpdate(1.0)
-        GetStaminaRegenPerSec = RestZone.GetStaminaRegenPerSec()
-        ; RestZone.SetStaminaRegenPerSec(GetStaminaRegenPerSec + StaminaChairRegenPerSec)
-        RestZone.StaminaRegenPerSec += StaminaChairRegenPerSec
     endif
     
 endEvent

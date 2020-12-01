@@ -33,6 +33,9 @@ sound property soundOfLeaveMineJob auto
 
 Actor ActorSelf
 
+string SetJob = "Вы начали свой рабочий день!"
+string LeaveJob = "Вы закончили свой рабочий день!"
+
 ; -- GetSet ----------------
 Faction Function GetPlayerIsMiner()
     return PlayerIsMiner
@@ -70,7 +73,7 @@ Function DeleteJob(objectReference akActionRef)
 
     ActorSelf.RemoveFromFaction(PlayerIsMiner)
     
-    Debug.MessageBox("Вы закончили свой рабочий день")
+    Debug.MessageBox(LeaveJob)
 
 EndFunction
 
@@ -89,7 +92,7 @@ Function SetJob(objectReference akActionRef)
 
     ActorSelf.AddToFaction(PlayerIsMiner)
 
-    Debug.MessageBox("Вы начали свой рабочий день")
+    Debug.MessageBox(SetJob)
 
 EndFunction
 

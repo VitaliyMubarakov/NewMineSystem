@@ -28,7 +28,10 @@ int Property FullnessOreCount = 1000 Auto
 int Property OreHealCount = 1 Auto 
 { amount of regeneration for each sec }
 
-int Property ProcessMinus = 20 Auto 
+float Property modFatiguePerSec = 1.0 Auto 
+{ amount of modFatigue for each sec }
+
+int Property DamageFullnessOreCountPerSec = 20 Auto 
 { reduce fullness of ore each second when player is mining }
 
 ; int property StrikesNeed = 12 Auto
@@ -40,12 +43,19 @@ int property TimeSecTwo = 7 Auto
 int property TimeSecThree = 9 Auto
 { how many times this is struck before giving a resource } 
 
-; int property StrikesCurrent = 0 Auto hidden
-; { Current number of strikes }
+int Property TimeSec Auto hidden 
 
-int Property TimeSec = 5 Auto 
+int Property TimeSecOne = 5 Auto 
 
 Int Property TimeSecCurrent = 0 Auto 
+
+Float Property SecForFatigue Auto 
+
+int Property PlayerFatigueProcentOne = 50 Auto 
+
+Int Property PlayerFatigueProcentTwo = 75 Auto 
+
+Int Property NeedSecForGiveOre = 5 Auto 
 
 bool property ProcessStrikes = false Auto hidden
 {Current number of attack strikes MOD}
@@ -60,93 +70,54 @@ AchievementsScript property AchievementsQuest auto
 
 Actor ActorSelf
 
+string youTired = "Вы устали! Вам необходимо отдохнуть"
 
 ;===================================================================
 ;;EVENT BLOCK
 ;===================================================================
-; Event OnInit(); when this script is initialized
-; 	RegisterForUpdate(1.0);register for an onupdate event in 5 seconds
-; 	; RegisterForUpdateGameTime(0.5)
-; EndEvent
+Event OnInit(); when this script is initialized
+	TimeSec = TimeSecOne
+EndEvent
 
 Event OnUpdate()
 	if ActorSelf
-	
-		if (FullnessOreCount < 1000 && myFurniture.GetPlayerIsLeavingFurniture() == true)
-			FullnessOreCount += OreHealCount
-			RegisterForSingleUpdate(1.0)
-		endif
-
-		if (FullnessOreCount > 0 && FullnessOreCount < OreHealCount + 1)
-			ResetObj()
-		endif
 		
-		if (ActorSelf.GetActorValue("Stamina") > 0 && ProcessStrikes == true)
-			ActorSelf.DamageActorValue("Stamina", 2.0)
-			TimeSecCurrent += 1
-			; Debug.MessageBox(TimeSecCurrent)
-			FullnessOreCount -= ProcessMinus
-			RegisterForSingleUpdate(1.0)
+		FullnessOreCountHeal()
 
-		elseif (ActorSelf.GetActorValue("Stamina") <= 0 && ProcessStrikes == true)
-			myFurniture.SetPlayerIsLeavingFurniture(true)
-			myFurniture.goToState("reseting")
-			
-			TimeSecCurrent = 0
-			ProcessStrikes = false
-			UnregisterForUpdate()
-		endif	
+		ResetObj()
+		
+		DamageFullnessOreCountOrStopAnimation()
 
-		if (TimeSecCurrent == TimeSec && ActorSelf.getAnimationVariableBool("bAnimationDriven") == true)
-			myFurniture.playerIsLeavingFurniture == true
-			myFurniture.goToState("reseting")
+		EndMine()
 
-			TimeSecCurrent = 0
-			ProcessStrikes = false
-			UnregisterForUpdate()
-
-			proccessStrikes(ActorSelf)
-			
-		endif
-
-		if (ActorSelf.getAnimationVariableBool("bAnimationDriven") == false)
-			ActorSelf.ModActorValue("StaminaRate", 100)
-			ProcessStrikes == false
-			UnregisterForUpdate()
-		endif
+		StopAnimationIfDiggingIsStop()
 
 	endif
 	
 	
 endEvent
 
-; Event OnHit(ObjectReference akAggressor, Form akSource, Projectile akProjectile, bool abPowerAttack, bool abSneakAttack, \
-; 	bool abBashAttack, bool abHitBlocked)
-; 	depleteOreDueToFailure()
-; 	; self.damageObject(50.0)
-; 	Debug.MessageBox(self.GetCurrentDestructionStage() + "PIZA")
-;   EndEvent
+event onCellAttach()
+	if (ActorSelf)	
 
-; event onCellAttach()
-; 	if (ActorSelf)	
+		blockActivation()
+		SetNoFavorAllowed()
+		objSelf = self as objectReference
+		if !getLinkedRef()
+			if (FullnessOreCount <= 0) 
+			depleteOreDueToFailure()
+			endif
 
-; 		blockActivation()
-; 		SetNoFavorAllowed()
-; 		objSelf = self as objectReference
-; 		if !getLinkedRef()
-; 			if (FullnessOreCount <= 0) 
-; 			depleteOreDueToFailure()
-; 			endif
-
-; 		endif
-; 	endif
-; endEvent
+		endif
+	endif
+endEvent
 
 event onActivate(objectReference akActivator)
 	ActorSelf = akActivator As Actor
 
 	;Actor is attempting to mine
-	if (akActivator as actor)
+	if (akActivator as actor && myFurniture.isRegisteredForEvents == false && (ActorSelf as aaMP_PlayerFatigue).getFatigue() < 100)
+
 		;if this is not depleted and the player has the right item 
 		If (FullnessOreCount == 0)
 			DepletedMessage.Show()
@@ -165,13 +136,19 @@ event onActivate(objectReference akActivator)
 			Else
 			endif
 		endif
+	
+	elseif ((ActorSelf as aaMP_PlayerFatigue).getFatigue() >= 100)
+		Debug.Notification(youTired)
 	endif
+	
 endEvent
 
 Function ResetObj()
-	self.Reset()
-	self.clearDestruction()
-	self.setDestroyed(False)
+	if (FullnessOreCount > 0 && FullnessOreCount < OreHealCount + 1)	
+		self.Reset()
+		self.clearDestruction()
+		self.setDestroyed(False)
+	endif
 endFunction
 
 ;===================================================================
@@ -190,7 +167,62 @@ bool function playerHasTools()
 	endif
 endFunction
 
-function proccessStrikes(objectReference akActivator)
+Function DamageFullnessOreCountOrStopAnimation()
+	if ((ActorSelf as aaMP_PlayerFatigue).getFatigue() < (ActorSelf as aaMP_PlayerFatigue).getFatigueHigherLimit() && ProcessStrikes == true)
+		(ActorSelf as aaMP_PlayerFatigue).modFatigue(modFatiguePerSec)
+		TimeSecCurrent += 1
+
+		FullnessOreCount -= DamageFullnessOreCountPerSec
+		RegisterForSingleUpdate(1.0)
+
+	elseif ((ActorSelf as aaMP_PlayerFatigue).getFatigue() >= 100 && ProcessStrikes == true)
+		myFurniture.SetPlayerIsLeavingFurniture(true)
+		myFurniture.isRegisteredForEvents = false
+		myFurniture.goToState("reseting")
+		
+		TimeSecCurrent = 0
+		ProcessStrikes = false
+		UnregisterForUpdate()
+	endif	
+EndFunction
+
+Function FullnessOreCountHeal()
+	if (FullnessOreCount < 1000 && myFurniture.GetPlayerIsLeavingFurniture() == true)
+		myFurniture.isRegisteredForEvents = false
+		FullnessOreCount += OreHealCount
+		RegisterForSingleUpdate(1.0)
+	endif
+EndFunction
+
+Function EndMine()
+	if (TimeSecCurrent >= NeedSecForGiveOre && ActorSelf.getAnimationVariableBool("bAnimationDriven") == true && (ActorSelf as aaMP_PlayerFatigue).getFatigue() > 0)
+		
+		myFurniture.SetPlayerIsLeavingFurniture(true)
+		myFurniture.isRegisteredForEvents = false
+		myFurniture.goToState("reseting")
+		TimeSecCurrent = 0
+		ProcessStrikes = false
+		UnregisterForUpdate()
+		; (ActorSelf as aaMP_PlayerFatigue).modFatigue(modFatiguePerSec)
+		proccessAndStrikes(ActorSelf)
+	endif
+EndFunction
+
+Function StopAnimationIfDiggingIsStop()
+	if (ActorSelf.getAnimationVariableBool("bAnimationDriven") == false)
+		ActorSelf.ModActorValue("StaminaRate", 100)
+		myFurniture.isRegisteredForEvents = false
+		myFurniture.goToState("reseting")
+		ProcessStrikes == false
+		UnregisterForUpdate()
+	endif
+EndFunction
+
+function DebuffForOre()
+	if (FullnessOreCount > 800) 
+		TimeSec = TimeSecOne
+	EndIf
+	
 	if (FullnessOreCount <= 800 && FullnessOreCount > 200) 
 		TimeSec = TimeSecTwo
 	EndIf
@@ -198,7 +230,29 @@ function proccessStrikes(objectReference akActivator)
 	if (FullnessOreCount <= 200 && FullnessOreCount > 0) 
 		TimeSec = TimeSecThree
 	EndIf
+endfunction
+
+function DebuffForPlayerMine()
+	if ((ActorSelf as aaMP_PlayerFatigue).getFatigue() >= 0 && (ActorSelf as aaMP_PlayerFatigue).getFatigue() < 50)
+		SecForFatigue = 0
+	endif
 	
+	if ((ActorSelf as aaMP_PlayerFatigue).getFatigue() >= 50 && (ActorSelf as aaMP_PlayerFatigue).getFatigue() < 75)
+		SecForFatigue = (NeedSecForGiveOre as Float)/100*PlayerFatigueProcentTwo
+	endif
+	
+	if ((ActorSelf as aaMP_PlayerFatigue).getFatigue() >= 75 && (ActorSelf as aaMP_PlayerFatigue).getFatigue() <= 100)
+		SecForFatigue = (NeedSecForGiveOre as Float)/100*PlayerFatigueProcentOne
+	endif
+endfunction
+
+function proccessAndStrikes(objectReference akActivator)
+	DebuffForOre()
+
+	DebuffForPlayerMine()
+
+	NeedSecForGiveOre = TimeSec + Math.Ceiling(SecForFatigue)
+
 	giveOre(akActivator)
 	
 endFunction
@@ -233,7 +287,7 @@ function giveOre(objectReference akActivator)
 			
 		elseif (FullnessOreCount <= 0)
 			getLinkedRef().activate(objSelf)
-			(getLinkedRef() as MineOreFurnitureScript).goToDepletedState()
+			(getLinkedRef() as SkyMp_OreFurnitureScript).goToDepletedState()
 			DepletedMessage.Show()
 		endif
 	endif
@@ -246,3 +300,6 @@ function depleteOreDueToFailure()
 	self.setDestroyed(true)
 	FullnessOreCount = 0
 endFunction
+
+; ----------------- Getters ------------------------
+

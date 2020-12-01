@@ -29,6 +29,9 @@ idle property PickaxeExit auto
 
 bool property playerIsLeavingFurniture = false auto hidden
 
+int property Da = 5 auto hidden
+{bool to track if this is registered for events}
+
 Function SetPlayerIsLeavingFurniture(bool ValuePlayerIsLeavingFurniture)
     playerIsLeavingFurniture = ValuePlayerIsLeavingFurniture
 EndFunction
@@ -43,6 +46,12 @@ faction property CurrentFollowerFaction auto
 {Used to handle player followers using the furniture object}
 
 globalvariable property MiningSkillIncrement auto
+
+; Actor Game.GetPlayer()
+
+; Function SetGame.GetPlayer()(Actor Game.GetPlayer()Value)
+; 	Game.GetPlayer() = Game.GetPlayer()Value
+; EndFunction
 ;===================================================================
 ;;EVENT BLOCK
 ;===================================================================
@@ -64,10 +73,10 @@ Event OnAnimationEvent(ObjectReference akSource, string asEventName)
 	
 	;if the animation event we've recieved is addToInventory activate our mineOreVein with
 	;the furniture as the activator to tell it to pay out ore
-	if (asEventName == "AddToInventory")
-		;Game.GetPlayer().AddItem(Resource, ResourceCount)
-		lastActivateRef.activate(objSelf)
-	endif	
+	; if (asEventName == "AddToInventory")
+	; 	;Game.GetPlayer().AddItem(Resource, ResourceCount)
+	; 	lastActivateRef.activate(objSelf)
+	; endif	
 
 	
 	if (asEventName == "IdleFurnitureExit" || asEventName == "IdlePickaxeExit" || asEventName == "IdlePickaxeFloorExit" || asEventName == "IdlePickaxeTableExit")
@@ -86,6 +95,7 @@ auto STATE normal
 	endEvent
 	
 	Event OnActivate(ObjectReference akActionRef)
+		; Game.GetPlayer() = akActionRef As Actor
 		if (canBeActivated)
 			canBeActivated = False
 			gotoState("busy")
@@ -117,6 +127,7 @@ STATE busy
 	endEvent
 	
 	event onActivate(objectReference akActionRef)
+		; Game.GetPlayer() = akActionRef As Actor
 		if (canBeActivated && isFurnitureInUse())
 			canBeActivated = False
 ; 			debug.Trace(self + ": has recieved activation in busy state from " + akActionRef)
@@ -124,22 +135,22 @@ STATE busy
 				if (akActionRef == lastActivateRef)
 ; 					debug.Trace(self + ": is trying to kick player out of furniture")
 					; Game.GetPlayer().PlayIdle(PickaxeExit)
-					; Activate(game.getPlayer(), true)
+					; Activate(Game.GetPlayer(), true)
 					playerIsLeavingFurniture = True
 					goToState("reseting")
-				elseif (akActionRef == game.GetPlayer())
+				elseif (akActionRef == Game.GetPlayer())
 ; 					debug.Trace(self + ": player is trying to leave furniture")
 					; Game.GetPlayer().PlayIdle(PickaxeExit)
-					; Activate(game.getPlayer(), true)
+					; Activate(Game.GetPlayer(), true)
 					playerIsLeavingFurniture = True
 					goToState("reseting")
 				endif
-			elseif (akActionRef == game.GetPlayer())
-				Activate(game.getPlayer(), true)
+			elseif (akActionRef == Game.GetPlayer())
+				Activate(Game.GetPlayer(), true)
 			else
 				;Activate(akActivator, true)
 			endif
-		elseif (!isFurnitureInUse() && akActionRef == game.GetPlayer())
+		elseif (!isFurnitureInUse() && akActionRef == Game.GetPlayer())
 ; 			debug.trace(self + ": was activated by the player")
 			RegisterForEvents()
 			Activate(akActionRef, true)
@@ -157,7 +168,7 @@ state reseting
 		else
 			UnregisterForEvents()
 		endif
-		;Activate(game.getPlayer(), true)
+		;Activate(Game.GetPlayer(), true)
 		
 		;UnregisterForEvents()
 	endEvent
@@ -214,7 +225,6 @@ function UnregisterForEvents()
 		UnRegisterForAnimationEvent(Game.GetPlayer(), "IdlePickaxeFloorExit")
 		UnRegisterForAnimationEvent(Game.GetPlayer(), "IdlePickaxeTableExit")
 		UnRegisterForAnimationEvent(Game.GetPlayer(), "IdleFurnitureExit")
-; 		debug.Trace(self + " should be unregistered for anim events")
 	endif
 	gotoState("normal")
 	canBeActivated = True
